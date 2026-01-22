@@ -1,4 +1,4 @@
-package com.example.messenger
+package com.example.messenger.ui.news
 
 import android.app.Application
 import android.util.Log
@@ -7,6 +7,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
+import com.example.messenger.data.repository.MessageRepository
+import com.example.messenger.worker.SyncWorker
 import kotlinx.coroutines.launch
 
 class MessagesViewModel(application: Application) : AndroidViewModel(application) {
@@ -15,9 +18,10 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     }
 
     private val repository = MessageRepository(application)
+    private val workManager = WorkManager.getInstance(application)
 
     private val _messages = repository.getMessages().asLiveData()
-    val messages = _messages
+    val messages: LiveData<List<com.example.messenger.data.local.MessageEntity>> = _messages
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -28,9 +32,13 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
     private val _messageCount = MutableLiveData<Int>()
     val messageCount: LiveData<Int> = _messageCount
 
+    private val _syncResult = MutableLiveData<Boolean?>()
+    val syncResult: LiveData<Boolean?> = _syncResult
+
     init {
         Log.d(TAG, "MessagesViewModel инициализирован")
         loadInitialData()
+        startPeriodicSync()
     }
 
     override fun onCleared() {
@@ -42,7 +50,8 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                repository.refreshMessages()
+                val success = repository.refreshMessages()
+                _syncResult.value = success
 
                 val count = repository.getMessageCount()
                 _messageCount.value = count
@@ -61,8 +70,10 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
             try {
                 _isLoading.value = true
                 _error.value = null
+                _syncResult.value = null
 
-                repository.refreshMessages()
+                val success = repository.refreshMessages()
+                _syncResult.value = success
 
                 val count = repository.getMessageCount()
                 _messageCount.value = count
@@ -74,5 +85,23 @@ class MessagesViewModel(application: Application) : AndroidViewModel(application
                 _isLoading.value = false
             }
         }
+    }
+
+    fun toggleLike(messageId: Int, currentIsLiked: Boolean) {
+        viewModelScope.launch {
+            try {
+                repository.toggleLike(messageId, currentIsLiked)
+            } catch (e: Exception) {
+                Log.e(TAG, "Ошибка при обновлении лайка: ${e.message}")
+            }
+        }
+    }
+
+    private fun startPeriodicSync() {
+        SyncWorker.startPeriodicSync(workManager)
+    }
+
+    fun resetSyncResult() {
+        _syncResult.value = null
     }
 }

@@ -1,16 +1,17 @@
-package com.example.messenger
+package com.example.messenger.data.repository
 
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
+import com.example.messenger.data.local.MessageEntity
+import com.example.messenger.data.local.MessengerDatabase
+import com.example.messenger.data.remote.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-class MessageRepository(
-    private val context: Context
-) {
+class MessageRepository(private val context: Context) {
     companion object {
         private const val TAG = "MessageRepository"
     }
@@ -23,7 +24,7 @@ class MessageRepository(
         return messageDao.getAllMessages()
     }
 
-    suspend fun refreshMessages() {
+    suspend fun refreshMessages(): Boolean {
         Log.d(TAG, "Начинаем обновление сообщений")
         try {
             if (isNetworkAvailable()) {
@@ -36,12 +37,16 @@ class MessageRepository(
                     val messages = response.body() ?: emptyList()
                     Log.d(TAG, "Получено ${messages.size} сообщений с API")
 
+                    val existingMessages = getExistingMessages()
+
                     val messageEntities = messages.map { message ->
+                        val existingMessage = existingMessages.find { it.id == message.id }
                         MessageEntity(
                             id = message.id,
                             userId = message.userId,
                             title = message.title,
                             body = message.body,
+                            isLiked = existingMessage?.isLiked ?: false
                         )
                     }
 
@@ -51,20 +56,45 @@ class MessageRepository(
                     }
 
                     Log.d(TAG, "Сообщения сохранены в базу данных")
+                    return true
                 } else {
                     Log.e(TAG, "Ошибка API: ${response.code()} - ${response.message()}")
+                    return false
                 }
             } else {
                 Log.d(TAG, "Сеть недоступна, используем локальную базу")
+                return false
             }
         } catch (e: Exception) {
             Log.e(TAG, "Ошибка при обновлении сообщений: ${e.message}", e)
+            return false
         }
     }
 
     suspend fun getMessageCount(): Int {
         return withContext(Dispatchers.IO) {
             messageDao.getMessageCount()
+        }
+    }
+
+    suspend fun toggleLike(messageId: Int, isLiked: Boolean) {
+        withContext(Dispatchers.IO) {
+            messageDao.updateLikeStatus(messageId, !isLiked)
+        }
+    }
+
+    private suspend fun getExistingMessages(): List<MessageEntity> {
+        return withContext(Dispatchers.IO) {
+            try {
+                var messages: List<MessageEntity> = emptyList()
+                messageDao.getAllMessages().collect {
+                    messages = it
+                    throw kotlinx.coroutines.CancellationException("Got first batch")
+                }
+                messages
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                emptyList()
+            }
         }
     }
 

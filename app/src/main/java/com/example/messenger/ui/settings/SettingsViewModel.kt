@@ -1,4 +1,4 @@
-package com.example.messenger
+package com.example.messenger.ui.settings
 
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -22,11 +22,6 @@ class SettingsViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         Log.d(TAG, "SettingsViewModel уничтожен")
-    }
-
-    fun toggleTheme() {
-        _isDarkTheme.value = !(_isDarkTheme.value ?: false)
-        Log.d(TAG, "Тема переключена на: ${if (_isDarkTheme.value == true) "темная" else "светлая"}")
     }
 
     fun setTheme(isDark: Boolean) {

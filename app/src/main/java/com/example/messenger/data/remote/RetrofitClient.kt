@@ -1,4 +1,4 @@
-package com.example.messenger
+package com.example.messenger.data.remote
 
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient

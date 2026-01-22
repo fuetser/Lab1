@@ -1,4 +1,4 @@
-package com.example.messenger
+package com.example.messenger.data.local
 
 import android.content.Context
 import androidx.room.Database
@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [MessageEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class MessengerDatabase : RoomDatabase() {

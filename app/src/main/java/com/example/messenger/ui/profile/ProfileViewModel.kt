@@ -1,4 +1,4 @@
-package com.example.messenger
+package com.example.messenger.ui.profile
 
 import android.util.Log
 import androidx.lifecycle.LiveData

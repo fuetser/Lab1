@@ -1,4 +1,4 @@
-package com.example.messenger
+package com.example.messenger.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -15,10 +15,10 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE id = :messageId")
     suspend fun getMessageById(messageId: Int): MessageEntity?
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertMessage(message: MessageEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertAll(messages: List<MessageEntity>)
 
     @Query("DELETE FROM messages")
@@ -26,4 +26,7 @@ interface MessageDao {
 
     @Query("SELECT COUNT(*) FROM messages")
     suspend fun getMessageCount(): Int
+
+    @Query("UPDATE messages SET is_liked = :isLiked WHERE id = :messageId")
+    suspend fun updateLikeStatus(messageId: Int, isLiked: Boolean)
 }

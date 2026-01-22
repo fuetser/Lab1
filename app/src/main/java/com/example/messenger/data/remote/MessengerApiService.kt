@@ -1,5 +1,6 @@
-package com.example.messenger
+package com.example.messenger.data.remote
 
+import com.example.messenger.data.remote.Message
 import retrofit2.Response
 import retrofit2.http.GET
 

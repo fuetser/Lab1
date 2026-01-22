@@ -1,4 +1,4 @@
-package com.example.messenger
+package com.example.messenger.ui.profile
 
 import android.os.Bundle
 import android.util.Log
@@ -9,14 +9,15 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
+import com.example.messenger.R
 
 class ProfileFragment : Fragment() {
     companion object {
         private const val TAG = "ProfileFragment"
     }
 
-    private lateinit var profileViewModel: ProfileViewModel
+    private val viewModel: ProfileViewModel by viewModels()
     private lateinit var tvUserName: TextView
     private lateinit var tvUserStatus: TextView
     private lateinit var etUserName: EditText
@@ -29,66 +30,44 @@ class ProfileFragment : Fragment() {
     ): View? {
         Log.d(TAG, "onCreateView")
 
-        // Инициализируем ViewModel
-        profileViewModel = ViewModelProvider(this).get(ProfileViewModel::class.java)
-
         val view = inflater.inflate(R.layout.fragment_profile, container, false)
 
-        // Находим View элементы
         tvUserName = view.findViewById(R.id.tv_user_name)
         tvUserStatus = view.findViewById(R.id.tv_user_status)
         etUserName = view.findViewById(R.id.et_user_name)
         etUserStatus = view.findViewById(R.id.et_user_status)
         btnSave = view.findViewById(R.id.btn_save)
 
-        // Наблюдаем за изменениями в LiveData
-        profileViewModel.userName.observe(viewLifecycleOwner) { name ->
+        return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        viewModel.userName.observe(viewLifecycleOwner) { name ->
             tvUserName.text = name
             etUserName.setText(name)
             Log.d(TAG, "UI обновлен: имя = $name")
         }
 
-        profileViewModel.userStatus.observe(viewLifecycleOwner) { status ->
+        viewModel.userStatus.observe(viewLifecycleOwner) { status ->
             tvUserStatus.text = status
             etUserStatus.setText(status)
             Log.d(TAG, "UI обновлен: статус = $status")
         }
 
-        // Обработчик кнопки сохранения
         btnSave.setOnClickListener {
             val newName = etUserName.text.toString()
             val newStatus = etUserStatus.text.toString()
 
             if (newName.isNotEmpty()) {
-                profileViewModel.updateUserName(newName)
+                viewModel.updateUserName(newName)
             }
 
             if (newStatus.isNotEmpty()) {
-                profileViewModel.updateUserStatus(newStatus)
+                viewModel.updateUserStatus(newStatus)
             }
         }
-
-        return view
-    }
-
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d(TAG, "onResume")
-    }
-
-    override fun onPause() {
-        super.onPause()
-        Log.d(TAG, "onPause")
-    }
-
-    override fun onStop() {
-        super.onStop()
-        Log.d(TAG, "onStop")
     }
 
     override fun onDestroy() {
